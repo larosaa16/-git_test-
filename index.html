@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      margin-bottom: 1em;
+    }
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: #f0f0f0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cell:hover {
+      background: #e0e0e0;
+    }
+    #status {
+      height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+  <p id="status"></p>
+  <button id="reset">Reset</button>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('reset');
+
+    const human = 'X';
+    const ai = 'O';
+    let board = Array(9).fill(null);
+    let gameOver = false;
+
+    const winningCombos = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    function checkWinner(b) {
+      for (const combo of winningCombos) {
+        const [a, bIdx, c] = combo;
+        if (b[a] && b[a] === b[bIdx] && b[a] === b[c]) {
+          return b[a];
+        }
+      }
+      return b.every(cell => cell) ? 'tie' : null;
+    }
+
+    function makeMove(index, player) {
+      board[index] = player;
+      boardEl.children[index].textContent = player;
+    }
+
+    function handleClick(e) {
+      const index = +e.target.dataset.index;
+      if (gameOver || board[index]) return;
+      makeMove(index, human);
+      let result = checkWinner(board);
+      if (result) {
+        endGame(result);
+        return;
+      }
+      aiTurn();
+    }
+
+    function aiTurn() {
+      const index = bestMove();
+      makeMove(index, ai);
+      const result = checkWinner(board);
+      if (result) endGame(result);
+    }
+
+    function endGame(result) {
+      gameOver = true;
+      if (result === 'tie') {
+        statusEl.textContent = "It's a tie!";
+      } else {
+        statusEl.textContent = result + ' wins!';
+      }
+    }
+
+    function bestMove() {
+      let bestScore = -Infinity;
+      let move;
+      for (let i = 0; i < board.length; i++) {
+        if (board[i]) continue;
+        board[i] = ai;
+        let score = minimax(board, 0, false);
+        board[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+      return move;
+    }
+
+    const scores = {
+      [ai]: 1,
+      [human]: -1,
+      tie: 0
+    };
+
+    function minimax(b, depth, isMaximizing) {
+      const result = checkWinner(b);
+      if (result !== null) {
+        return scores[result];
+      }
+
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < b.length; i++) {
+          if (b[i]) continue;
+          b[i] = ai;
+          const score = minimax(b, depth + 1, false);
+          b[i] = null;
+          best = Math.max(score, best);
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < b.length; i++) {
+          if (b[i]) continue;
+          b[i] = human;
+          const score = minimax(b, depth + 1, true);
+          b[i] = null;
+          best = Math.min(score, best);
+        }
+        return best;
+      }
+    }
+
+    function reset() {
+      board = Array(9).fill(null);
+      gameOver = false;
+      statusEl.textContent = '';
+      Array.from(boardEl.children).forEach(cell => cell.textContent = '');
+    }
+
+    boardEl.addEventListener('click', handleClick);
+    resetBtn.addEventListener('click', reset);
+  </script>
+</body>
+</html>
